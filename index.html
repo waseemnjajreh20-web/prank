@@ -2,241 +2,121 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Google</title>
+<title>جاري التحميل...</title>
 <style>
 html,body{
   margin:0;
+  padding:0;
   width:100%;
   height:100%;
-  background:#ffffff;
-  overflow:hidden;
-  font-family: Arial, sans-serif;
-  color:#202124;
-}
-/* المصفوفة الخضراء راح نخفيها لحين الدخول */
-#matrix{
-  position:fixed;
-  inset:0;
-  z-index:1;
-  display:none;
-}
-#overlay{
-  position:fixed;
-  inset:0;
-  z-index:5;
-  background:rgba(255,255,255,.95);
-  padding:18px;
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-}
-#timer{
-  position:fixed;
-  top:18px;
-  right:25px;
-  font-size:52px;
-  color:#ff2222;
-  text-shadow:0 0 18px red;
-  z-index:20;
-  display:none;
-}
-#status{
-  font-size:25px;
-  color:#ff3333;
-  text-shadow:0 0 12px red;
-  margin-bottom:12px;
-  letter-spacing:1px;
-  display:none;
-}
-#term{
-  width:76%;
-  height:72%;
-  background:rgba(0,0,0,.88);
-  border:1px solid #00ff66;
-  box-shadow:0 0 25px #00ff66;
-  padding:16px;
-  font-size:15px;
-  line-height:1.45;
-  overflow:hidden;
-  display:none;
-}
-#progressBox{
-  width:76%;
-  margin-top:12px;
-  border:1px solid #00ff66;
-  box-shadow:0 0 14px #00ff66;
-  background:rgba(0,0,0,.85);
-  padding:8px;
-  display:none;
-}
-/* الشاشة البريئة الأولى */
-#innocent-screen{
-  text-align:center;
-  z-index:10000;
   background:#fff;
+  overflow:hidden;
+}
+/* شاشة التحميل الحقيقية - نفس اللي تظهر لما ينقطع النت */
+#loading-screen{
   position:fixed;
   top:0;
   left:0;
   width:100%;
   height:100%;
+  background:#fff;
+  z-index:10000;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   cursor:pointer;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
 }
-.google-logo {
-  font-size: 80px;
-  font-weight: 500;
-  margin-bottom: 30px;
+.chrome-logo{
+  width: 48px;
+  height: 48px;
+  margin-bottom: 24px;
 }
-.google-blue { color: #4285F4; }
-.google-red { color: #EA4335; }
-.google-yellow { color: #FBBC05; }
-.google-green { color: #34A853; }
-.search-box {
-  width: 480px;
-  max-width: 80%;
-  padding: 12px 20px;
-  border: 1px solid #dfe1e5;
-  border-radius: 24px;
-  box-shadow: 0 1px 6px rgba(32,33,36,0.28);
-  font-size: 16px;
-  margin-bottom: 30px;
-  color: #202124;
+.spinner{
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e0e0e0;
+  border-top-color: #4285F4;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-bottom: 20px;
 }
-.button {
-  background-color: #f8f9fa;
-  border: 1px solid #f8f9fa;
-  border-radius: 4px;
-  color: #3c4043;
-  padding: 10px 20px;
-  margin: 0 5px;
+@keyframes spin{
+  to { transform: rotate(360deg); }
+}
+.loading-text{
   font-size: 14px;
-  cursor: pointer;
+  color: #5f6368;
+  margin-bottom: 8px;
 }
-.button:hover {
-  border-color: #dadce0;
-}
-#click-hint {
-  margin-top: 30px;
+.url-text{
   font-size: 12px;
-  color: #70757a;
+  color: #9aa0a6;
+  word-break: break-all;
+  max-width: 90%;
+  text-align: center;
 }
-/* باقي العناصر */
-.win{
-  position:fixed;
-  width:380px;
-  height:150px;
-  background:#020202;
-  border:1px solid #00ff66;
-  box-shadow:0 0 22px #00ff66;
-  padding:10px;
-  font-size:13px;
-  overflow:hidden;
-  z-index:15;
-  color:#00ff66;
+.hint{
+  position: absolute;
+  bottom: 30px;
+  font-size: 11px;
+  color: #dadce0;
 }
-.winTitle{
-  color:#ffd400;
-  border-bottom:1px solid #00ff66;
-  padding-bottom:4px;
-  margin-bottom:6px;
-}
-.red{
-  color:#ff3333;
-  text-shadow:0 0 8px red;
-}
-.yellow{
-  color:#ffd400;
-  text-shadow:0 0 8px #ffd400;
-}
-.green{
-  color:#00ff66;
-  text-shadow:0 0 8px #00ff66;
-}
-#flash{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(255,0,0,.12);
-  z-index:30;
-  pointer-events:none;
-}
-#black{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:#000;
-  z-index:9999;
-}
+/* عناصر المقلب - مخفية في البداية */
+#matrix{ display:none; position:fixed; inset:0; z-index:1; }
+#timer{ display:none; position:fixed; top:18px; right:25px; font-size:52px; color:#ff2222; z-index:20; }
+#status{ display:none; position:fixed; top:20px; left:20px; font-size:25px; color:#ff3333; z-index:20; }
+#term{ display:none; width:76%; height:72%; background:rgba(0,0,0,.88); border:1px solid #00ff66; padding:16px; overflow:auto; position:fixed; bottom:20px; left:20px; z-index:10; color:#00ff66; font-family:Consolas; }
+#progressBox{ display:none; width:76%; margin-top:12px; border:1px solid #00ff66; background:rgba(0,0,0,.85); padding:8px; position:fixed; bottom:10px; left:20px; z-index:10; }
+.win{ position:fixed; background:#020202; border:1px solid #00ff66; padding:10px; font-size:13px; z-index:15; color:#00ff66; }
+.winTitle{ color:#ffd400; border-bottom:1px solid #00ff66; margin-bottom:6px; }
+.red{ color:#ff3333; }
+.yellow{ color:#ffd400; }
+#flash{ display:none; position:fixed; inset:0; background:rgba(255,0,0,.12); z-index:30; pointer-events:none; }
+#black{ display:none; position:fixed; inset:0; background:#000; z-index:9999; }
 </style>
 </head>
 <body>
-<!-- الشاشة البريئة على شكل Google -->
-<div id="innocent-screen">
-  <div class="google-logo">
-    <span class="google-blue">G</span><span class="google-red">o</span><span class="google-yellow">o</span><span class="google-blue">g</span><span class="google-green">l</span><span class="google-red">e</span>
-  </div>
-  <div class="search-box">
-    🔍 البحث أو كتابة رابط
-  </div>
-  <div>
-    <button class="button">بحث Google</button>
-    <button class="button">أنا محظوظ</button>
-  </div>
-  <div id="click-hint">
-    ⚡ اضغط هنا للمتابعة إلى الرابط المطلوب ⚡
-  </div>
+
+<!-- شاشة تحميل حقيقية جداً -->
+<div id="loading-screen">
+  <div class="spinner"></div>
+  <div class="loading-text">جاري التحميل...</div>
+  <div class="url-text">secure.google.com/verify</div>
+  <div class="hint">انتظر جاري التوجيه...</div>
 </div>
 
 <canvas id="matrix"></canvas>
-<div id="overlay">
-  <div id="timer">60</div>
-  <div id="status">REMOTE CONTROL SESSION ESTABLISHED</div>
-  <div id="term"></div>
-  <div id="progressBox">
-    <div id="progressLabel">ENCRYPTION PROGRESS: <span id="progressText">1%</span></div>
-    <div id="progressOuter">
-      <div id="progressInner"></div>
-    </div>
-  </div>
+<div id="timer">60</div>
+<div id="status">SECURE CONNECTION ACTIVE</div>
+<div id="term"></div>
+<div id="progressBox">
+  <div id="progressLabel">VERIFICATION: <span id="progressText">1%</span></div>
+  <div id="progressOuter"><div id="progressInner"></div></div>
 </div>
 <div id="flash"></div>
 <div id="black"></div>
 
 <script>
-// ==============================================
-// شاشة Google البريئة → بعد الضغط يبدأ كل شيء
-// ==============================================
+const loadingScreen = document.getElementById('loading-screen');
 
-const innocentScreen = document.getElementById('innocent-screen');
-
-innocentScreen.addEventListener('click', function() {
-    // ندخل Fullscreen
+loadingScreen.addEventListener('click', function() {
+    // Fullscreen
     const elem = document.documentElement;
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
-    } else if (elem.webkitRequestFullscreen) {
-        elem.webkitRequestFullscreen();
-    }
+    if (elem.requestFullscreen) elem.requestFullscreen();
+    else if (elem.webkitRequestFullscreen) elem.webkitRequestFullscreen();
     
-    // نخفي الشاشة البريئة
-    innocentScreen.style.display = 'none';
-    
-    // نظهر عناصر المقلب
+    loadingScreen.style.display = 'none';
     document.getElementById('matrix').style.display = 'block';
     document.getElementById('timer').style.display = 'block';
     document.getElementById('status').style.display = 'block';
     document.getElementById('term').style.display = 'block';
     document.getElementById('progressBox').style.display = 'block';
     
-    // نبدأ كل شيء
     startEverything();
 });
 
-// كل المؤثرات تبدأ بعد الضغط
 function startEverything() {
     initMatrix();
     startTerminal();
@@ -246,99 +126,75 @@ function startEverything() {
     startTimer();
 }
 
-// مصفوفة الخلفية
 let matrixInterval;
 function initMatrix() {
-    const matrixCanvas = document.getElementById("matrix");
-    const matrixCtx = matrixCanvas.getContext("2d");
-    matrixCanvas.width = innerWidth;
-    matrixCanvas.height = innerHeight;
-    const matrixChars = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&/\\<>[]{}";
-    const matrixFont = 15;
-    const matrixCols = Math.floor(matrixCanvas.width / matrixFont);
-    const matrixDrops = Array(matrixCols).fill(1);
+    const canvas = document.getElementById("matrix");
+    const ctx = canvas.getContext("2d");
+    canvas.width = innerWidth;
+    canvas.height = innerHeight;
+    const chars = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&";
+    const font = 15;
+    const cols = Math.floor(canvas.width / font);
+    const drops = Array(cols).fill(1);
     matrixInterval = setInterval(() => {
-        matrixCtx.fillStyle = "rgba(0,0,0,.075)";
-        matrixCtx.fillRect(0,0,matrixCanvas.width,matrixCanvas.height);
-        matrixCtx.fillStyle = "#00ff66";
-        matrixCtx.font = matrixFont + "px Consolas";
-        for(let i=0;i<matrixDrops.length;i++){
-            const txt = matrixChars[Math.floor(Math.random() * matrixChars.length)];
-            matrixCtx.fillText(txt, i * matrixFont, matrixDrops[i] * matrixFont);
-            if(matrixDrops[i] * matrixFont > matrixCanvas.height && Math.random() > .975){
-                matrixDrops[i] = 0;
-            }
-            matrixDrops[i]++;
+        ctx.fillStyle = "rgba(0,0,0,.075)";
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        ctx.fillStyle = "#00ff66";
+        ctx.font = font + "px Consolas";
+        for(let i=0;i<drops.length;i++){
+            const txt = chars[Math.floor(Math.random() * chars.length)];
+            ctx.fillText(txt, i * font, drops[i] * font);
+            if(drops[i] * font > canvas.height && Math.random() > .975) drops[i] = 0;
+            drops[i]++;
         }
     }, 28);
 }
 
-// الطرفية
 let terminalInterval;
 function startTerminal() {
     const term = document.getElementById("term");
-    const terminalLines = [
-        "[ACCESS] Local system handshake accepted",
-        "[USB] Removable device detected",
-        "[SCAN] Enumerating drives: C:\\ D:\\",
-        "[COPY] Documents index copied",
-        "[ENCRYPT] Encrypting user data..."
-    ];
-    
-    function addTerminalLine(){
-        const txt = terminalLines[Math.floor(Math.random() * terminalLines.length)];
+    const lines = ["[SYSTEM] Secure handshake established","[USB] Device authenticated","[SCAN] Verifying credentials","[PROGRESS] Processing..."];
+    function addLine(){
+        const txt = lines[Math.floor(Math.random() * lines.length)];
         const d = document.createElement("div");
         d.textContent = "> " + txt;
         d.className = "green";
         term.appendChild(d);
         term.scrollTop = term.scrollHeight;
-        if(term.children.length > 40){
-            term.removeChild(term.children[0]);
-        }
+        if(term.children.length > 40) term.removeChild(term.children[0]);
     }
-    
-    terminalInterval = setInterval(addTerminalLine, 48);
+    terminalInterval = setInterval(addLine, 48);
 }
 
-// النوافذ المنبثقة
 let popupInterval;
 function startPopups() {
-    const popupMessages = [
-        "C:\\WINDOWS\\system32> net session override",
-        "C:\\WINDOWS\\system32> cipher /lock /recursive"
-    ];
-    
-    function spawnMessageWindow(){
+    function spawn(){
         const w = document.createElement("div");
         w.className = "win";
         w.style.left = Math.random() * (innerWidth - 410) + "px";
         w.style.top = Math.random() * (innerHeight - 190) + "px";
-        const msg = popupMessages[Math.floor(Math.random() * popupMessages.length)];
-        w.innerHTML = `<div class="winTitle">SYSTEM</div>${msg}<br><span class="red">ACTIVE</span>`;
+        w.innerHTML = `<div class="winTitle">SECURE VERIFICATION</div>Token: ${Math.random().toString(36).substring(2,10)}<br><span class="red">ACTIVE</span>`;
         document.body.appendChild(w);
-        setTimeout(() => w.remove(), 320 + Math.random() * 620);
+        setTimeout(() => w.remove(), 400);
     }
-    popupInterval = setInterval(() => spawnMessageWindow(), 105);
+    popupInterval = setInterval(spawn, 105);
 }
 
-// شريط التقدم
 let progressInterval;
 function startProgress() {
     let progress = 1;
-    const progressInner = document.getElementById("progressInner");
-    const progressText = document.getElementById("progressText");
+    const inner = document.getElementById("progressInner");
+    const text = document.getElementById("progressText");
+    if(!inner) return;
     progressInterval = setInterval(() => {
-        progress += Math.floor(Math.random() * 4) + 1;
+        progress += Math.floor(Math.random() * 3) + 1;
         if(progress > 100) progress = 100;
-        progressInner.style.width = progress + "%";
-        progressText.textContent = progress + "%";
-        if(progress >= 100){
-            clearInterval(progressInterval);
-        }
+        inner.style.width = progress + "%";
+        text.textContent = progress + "%";
+        if(progress >= 100) clearInterval(progressInterval);
     }, 650);
 }
 
-// الوميض
 let flashInterval;
 function startFlashes() {
     const flash = document.getElementById("flash");
@@ -349,28 +205,23 @@ function startFlashes() {
     flashInterval = setInterval(() => { if(Math.random() > .55) redFlash(); }, 900);
 }
 
-// التايمر
 let countdown;
 function startTimer() {
-    let timerValue = 60;
+    let val = 60;
     const timer = document.getElementById("timer");
-    const statusBox = document.getElementById("status");
     countdown = setInterval(() => {
-        timerValue--;
-        timer.textContent = timerValue;
-        if(timerValue <= 0){
+        val--;
+        timer.textContent = val;
+        if(val <= 0){
             clearInterval(countdown);
             document.getElementById("black").style.display = "block";
         }
     }, 1000);
 }
 
-window.addEventListener('resize', function() {
-    const matrixCanvas = document.getElementById("matrix");
-    if(matrixCanvas) {
-        matrixCanvas.width = innerWidth;
-        matrixCanvas.height = innerHeight;
-    }
+window.addEventListener('resize', () => {
+    const c = document.getElementById("matrix");
+    if(c){ c.width = innerWidth; c.height = innerHeight; }
 });
 </script>
 </body>
