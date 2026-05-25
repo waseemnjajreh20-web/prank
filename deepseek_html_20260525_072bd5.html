@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Driver Runtime</title>
+<style>
+html,body{
+  margin:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  overflow:hidden;
+  font-family:Consolas, monospace;
+  color:#00ff66;
+  user-select:none;
+}
+canvas{
+  position:fixed;
+  inset:0;
+}
+#matrix{
+  z-index:1;
+}
+#overlay{
+  position:fixed;
+  inset:0;
+  z-index:5;
+  background:rgba(0,0,0,.25);
+  padding:18px;
+}
+#timer{
+  position:fixed;
+  top:18px;
+  right:25px;
+  font-size:52px;
+  color:#ff2222;
+  text-shadow:0 0 18px red;
+  z-index:20;
+}
+#status{
+  font-size:25px;
+  color:#ff3333;
+  text-shadow:0 0 12px red;
+  margin-bottom:12px;
+  letter-spacing:1px;
+}
+#term{
+  width:76%;
+  height:72%;
+  background:rgba(0,0,0,.88);
+  border:1px solid #00ff66;
+  box-shadow:0 0 25px #00ff66;
+  padding:16px;
+  font-size:15px;
+  line-height:1.45;
+  overflow:hidden;
+}
+#progressBox{
+  width:76%;
+  margin-top:12px;
+  border:1px solid #00ff66;
+  box-shadow:0 0 14px #00ff66;
+  background:rgba(0,0,0,.85);
+  padding:8px;
+}
+#progressLabel{
+  margin-bottom:6px;
+  color:#ffd400;
+}
+#progressOuter{
+  height:18px;
+  border:1px solid #00ff66;
+  overflow:hidden;
+}
+#progressInner{
+  width:1%;
+  height:100%;
+  background:#00ff66;
+  box-shadow:0 0 16px #00ff66;
+}
+.red{
+  color:#ff3333;
+  text-shadow:0 0 8px red;
+}
+.yellow{
+  color:#ffd400;
+  text-shadow:0 0 8px #ffd400;
+}
+.green{
+  color:#00ff66;
+  text-shadow:0 0 8px #00ff66;
+}
+.win{
+  position:fixed;
+  width:380px;
+  height:150px;
+  background:#020202;
+  border:1px solid #00ff66;
+  box-shadow:0 0 22px #00ff66;
+  padding:10px;
+  font-size:13px;
+  overflow:hidden;
+  z-index:15;
+}
+.winTitle{
+  color:#ffd400;
+  border-bottom:1px solid #00ff66;
+  padding-bottom:4px;
+  margin-bottom:6px;
+}
+.codeWin{
+  position:fixed;
+  width:300px;
+  height:210px;
+  background:#000;
+  border:1px solid #00ff66;
+  box-shadow:0 0 28px #00ff66;
+  overflow:hidden;
+  z-index:14;
+}
+.codeWin canvas{
+  position:absolute;
+  inset:0;
+}
+#flash{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(255,0,0,.12);
+  z-index:30;
+  pointer-events:none;
+}
+#black{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:#000;
+  z-index:9999;
+}
+#fullscreen-overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:#000;
+  z-index:10000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  color:#00ff66;
+  font-family:Consolas;
+  cursor:pointer;
+}
+</style>
+</head>
+<body>
+<!-- طبقة سوداء لتغطية كل شيء حتى يضغط المستخدم -->
+<div id="fullscreen-overlay">
+  <div style="text-align:center">
+    ⚠️ SYSTEM CHECK ⚠️<br>
+    <span style="font-size:14px">Click anywhere to continue...</span>
+  </div>
+</div>
+
+<canvas id="matrix"></canvas>
+<div id="overlay">
+  <div id="timer">60</div>
+  <div id="status">REMOTE CONTROL SESSION ESTABLISHED</div>
+  <div id="term"></div>
+  <div id="progressBox">
+    <div id="progressLabel">ENCRYPTION PROGRESS: <span id="progressText">1%</span></div>
+    <div id="progressOuter">
+      <div id="progressInner"></div>
+    </div>
+  </div>
+</div>
+<div id="flash"></div>
+<div id="black"></div>
+
+<script>
+// ==============================================
+// الحل النهائي لملء الشاشة - يشتغل 100%
+// ==============================================
+
+const overlayDiv = document.getElementById('fullscreen-overlay');
+
+// لما يضغط المستخدم على أي مكان
+overlayDiv.addEventListener('click', function() {
+    // ندخل ملء الشاشة
+    const elem = document.documentElement;
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+    } else if (elem.msRequestFullscreen) {
+        elem.msRequestFullscreen();
+    }
+    
+    // نخفي الطبقة السوداء
+    overlayDiv.style.display = 'none';
+    
+    // نبدأ كل شيء
+    startEverything();
+});
+
+// نبدأ تشغيل المؤثرات بعد دخول fullscreen
+function startEverything() {
+    // نبدأ المصفوفة
+    initMatrix();
+    // نبدأ الطرفية
+    startTerminal();
+    // نبدأ النوافذ المنبثقة
+    startPopups();
+    // نبدأ شريط التقدم
+    startProgress();
+    // نبدأ الوميض
+    startFlashes();
+    // نبدأ التايمر
+    startTimer();
+}
+
+// مصفوفة الخلفية
+let matrixInterval;
+function initMatrix() {
+    const matrixCanvas = document.getElementById("matrix");
+    const matrixCtx = matrixCanvas.getContext("2d");
+    matrixCanvas.width = innerWidth;
+    matrixCanvas.height = innerHeight;
+    const matrixChars = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ$#@%&/\\<>[]{}";
+    const matrixFont = 15;
+    const matrixCols = Math.floor(matrixCanvas.width / matrixFont);
+    const matrixDrops = Array(matrixCols).fill(1);
+    matrixInterval = setInterval(() => {
+        matrixCtx.fillStyle = "rgba(0,0,0,.075)";
+        matrixCtx.fillRect(0,0,matrixCanvas.width,matrixCanvas.height);
+        matrixCtx.fillStyle = "#00ff66";
+        matrixCtx.font = matrixFont + "px Consolas";
+        for(let i=0;i<matrixDrops.length;i++){
+            const txt = matrixChars[Math.floor(Math.random() * matrixChars.length)];
+            matrixCtx.fillText(txt, i * matrixFont, matrixDrops[i] * matrixFont);
+            if(matrixDrops[i] * matrixFont > matrixCanvas.height && Math.random() > .975){
+                matrixDrops[i] = 0;
+            }
+            matrixDrops[i]++;
+        }
+    }, 28);
+}
+
+// الطرفية
+let terminalInterval;
+function startTerminal() {
+    const term = document.getElementById("term");
+    const terminalLines = [
+        "[ACCESS] Local system handshake accepted",
+        "[ACCESS] Administrator token shadowed",
+        "[CONTROL] Remote command channel opened",
+        "[CONTROL] Input redirection enabled",
+        "[USB] Removable device detected: SCSI Disk Device",
+        "[USB] Autorun.inf executed from drive E:\\",
+        "[SCAN] Enumerating drives: C:\\ D:\\ USB\\",
+        "[SCAN] Mapping user libraries...",
+        "[COPY] Documents index copied to secure vault",
+        "[COPY] Browser profile cache extracted",
+        "[ENCRYPT] Encrypting user documents...",
+        "[ENCRYPT] Encrypting desktop data...",
+        "[ENCRYPT] Encrypting browser credentials cache...",
+        "[WARNING] USB removal will corrupt system shell",
+        "[CRITICAL] DISPLAY BLACKOUT IN PROGRESS"
+    ];
+    
+    function addTerminalLine(){
+        const txt = terminalLines[Math.floor(Math.random() * terminalLines.length)];
+        const d = document.createElement("div");
+        d.textContent = "> " + txt;
+        if(txt.includes("CRITICAL") || txt.includes("DELETE") || txt.includes("COMPLETE")){
+            d.className = "red";
+        } else if(txt.includes("WARNING") || txt.includes("USB")){
+            d.className = "yellow";
+        } else {
+            d.className = "green";
+        }
+        term.appendChild(d);
+        term.scrollTop = term.scrollHeight;
+        if(term.children.length > 40){
+            term.removeChild(term.children[0]);
+        }
+    }
+    
+    terminalInterval = setInterval(addTerminalLine, 48);
+}
+
+// النوافذ المنبثقة
+let popupInterval;
+function startPopups() {
+    const popupMessages = [
+        "C:\\WINDOWS\\system32> net session override",
+        "C:\\WINDOWS\\system32> shadowcopy purge queue",
+        "C:\\WINDOWS\\system32> display driver blackout armed"
+    ];
+    
+    function spawnMessageWindow(){
+        const w = document.createElement("div");
+        w.className = "win";
+        w.style.left = Math.random() * (innerWidth - 410) + "px";
+        w.style.top = Math.random() * (innerHeight - 190) + "px";
+        const msg = popupMessages[Math.floor(Math.random() * popupMessages.length)];
+        w.innerHTML = `
+            <div class="winTitle">SYSTEM32 EXECUTION WINDOW</div>
+            ${msg}<br>
+            block_id=${Math.floor(Math.random() * 999999)}<br>
+            <span class="red">FULL CONTROL: ACTIVE</span><br>
+            <span class="yellow">DO NOT REMOVE USB DEVICE</span>
+        `;
+        document.body.appendChild(w);
+        setTimeout(() => w.remove(), 320 + Math.random() * 620);
+    }
+    
+    popupInterval = setInterval(() => spawnMessageWindow(), 105);
+}
+
+// شريط التقدم
+let progressInterval;
+function startProgress() {
+    let progress = 1;
+    const progressInner = document.getElementById("progressInner");
+    const progressText = document.getElementById("progressText");
+    progressInterval = setInterval(() => {
+        progress += Math.floor(Math.random() * 4) + 1;
+        if(progress > 100) progress = 100;
+        progressInner.style.width = progress + "%";
+        progressText.textContent = progress + "%";
+        if(progress >= 100){
+            clearInterval(progressInterval);
+            document.getElementById("progressLabel").innerHTML = '<span class="red">FULL ENCRYPTION COMPLETED - LOCKDOWN ACTIVE</span>';
+        }
+    }, 650);
+}
+
+// الوميض
+let flashInterval;
+function startFlashes() {
+    const flash = document.getElementById("flash");
+    function redFlash(){
+        flash.style.display = "block";
+        setTimeout(() => flash.style.display = "none", 80);
+    }
+    flashInterval = setInterval(() => { if(Math.random() > .55) redFlash(); }, 900);
+}
+
+// التايمر
+let countdown;
+function startTimer() {
+    let timerValue = 60;
+    const timer = document.getElementById("timer");
+    const statusBox = document.getElementById("status");
+    countdown = setInterval(() => {
+        timerValue--;
+        timer.textContent = timerValue;
+        if(timerValue === 50) statusBox.textContent = "ENCRYPTING LOCAL DATA...";
+        if(timerValue === 40) statusBox.textContent = "REMOTE INPUT CONTROL ACTIVE";
+        if(timerValue === 30) statusBox.textContent = "FULL DEVICE LOCKDOWN ACTIVE";
+        if(timerValue === 10) statusBox.textContent = "DISPLAY BLACKOUT SEQUENCE ARMED";
+        if(timerValue <= 0){
+            clearInterval(countdown);
+            document.getElementById("black").style.display = "block";
+        }
+    }, 1000);
+}
+
+// ضبط حجم الكانفاس عند تغيير حجم النافذة
+window.addEventListener('resize', function() {
+    const matrixCanvas = document.getElementById("matrix");
+    if(matrixCanvas) {
+        matrixCanvas.width = innerWidth;
+        matrixCanvas.height = innerHeight;
+    }
+});
+</script>
+</body>
+</html>
