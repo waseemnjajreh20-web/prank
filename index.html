@@ -2,31 +2,34 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Driver Runtime</title>
+<title>Google</title>
 <style>
 html,body{
   margin:0;
   width:100%;
   height:100%;
-  background:#000;
+  background:#ffffff;
   overflow:hidden;
-  font-family:Consolas, monospace;
-  color:#00ff66;
-  user-select:none;
+  font-family: Arial, sans-serif;
+  color:#202124;
 }
-canvas{
+/* المصفوفة الخضراء راح نخفيها لحين الدخول */
+#matrix{
   position:fixed;
   inset:0;
-}
-#matrix{
   z-index:1;
+  display:none;
 }
 #overlay{
   position:fixed;
   inset:0;
   z-index:5;
-  background:rgba(0,0,0,.25);
+  background:rgba(255,255,255,.95);
   padding:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
 }
 #timer{
   position:fixed;
@@ -36,6 +39,7 @@ canvas{
   color:#ff2222;
   text-shadow:0 0 18px red;
   z-index:20;
+  display:none;
 }
 #status{
   font-size:25px;
@@ -43,6 +47,7 @@ canvas{
   text-shadow:0 0 12px red;
   margin-bottom:12px;
   letter-spacing:1px;
+  display:none;
 }
 #term{
   width:76%;
@@ -54,6 +59,7 @@ canvas{
   font-size:15px;
   line-height:1.45;
   overflow:hidden;
+  display:none;
 }
 #progressBox{
   width:76%;
@@ -62,21 +68,81 @@ canvas{
   box-shadow:0 0 14px #00ff66;
   background:rgba(0,0,0,.85);
   padding:8px;
+  display:none;
 }
-#progressLabel{
-  margin-bottom:6px;
-  color:#ffd400;
-}
-#progressOuter{
-  height:18px;
-  border:1px solid #00ff66;
-  overflow:hidden;
-}
-#progressInner{
-  width:1%;
+/* الشاشة البريئة الأولى */
+#innocent-screen{
+  text-align:center;
+  z-index:10000;
+  background:#fff;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
   height:100%;
-  background:#00ff66;
-  box-shadow:0 0 16px #00ff66;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+.google-logo {
+  font-size: 80px;
+  font-weight: 500;
+  margin-bottom: 30px;
+}
+.google-blue { color: #4285F4; }
+.google-red { color: #EA4335; }
+.google-yellow { color: #FBBC05; }
+.google-green { color: #34A853; }
+.search-box {
+  width: 480px;
+  max-width: 80%;
+  padding: 12px 20px;
+  border: 1px solid #dfe1e5;
+  border-radius: 24px;
+  box-shadow: 0 1px 6px rgba(32,33,36,0.28);
+  font-size: 16px;
+  margin-bottom: 30px;
+  color: #202124;
+}
+.button {
+  background-color: #f8f9fa;
+  border: 1px solid #f8f9fa;
+  border-radius: 4px;
+  color: #3c4043;
+  padding: 10px 20px;
+  margin: 0 5px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.button:hover {
+  border-color: #dadce0;
+}
+#click-hint {
+  margin-top: 30px;
+  font-size: 12px;
+  color: #70757a;
+}
+/* باقي العناصر */
+.win{
+  position:fixed;
+  width:380px;
+  height:150px;
+  background:#020202;
+  border:1px solid #00ff66;
+  box-shadow:0 0 22px #00ff66;
+  padding:10px;
+  font-size:13px;
+  overflow:hidden;
+  z-index:15;
+  color:#00ff66;
+}
+.winTitle{
+  color:#ffd400;
+  border-bottom:1px solid #00ff66;
+  padding-bottom:4px;
+  margin-bottom:6px;
 }
 .red{
   color:#ff3333;
@@ -89,38 +155,6 @@ canvas{
 .green{
   color:#00ff66;
   text-shadow:0 0 8px #00ff66;
-}
-.win{
-  position:fixed;
-  width:380px;
-  height:150px;
-  background:#020202;
-  border:1px solid #00ff66;
-  box-shadow:0 0 22px #00ff66;
-  padding:10px;
-  font-size:13px;
-  overflow:hidden;
-  z-index:15;
-}
-.winTitle{
-  color:#ffd400;
-  border-bottom:1px solid #00ff66;
-  padding-bottom:4px;
-  margin-bottom:6px;
-}
-.codeWin{
-  position:fixed;
-  width:300px;
-  height:210px;
-  background:#000;
-  border:1px solid #00ff66;
-  box-shadow:0 0 28px #00ff66;
-  overflow:hidden;
-  z-index:14;
-}
-.codeWin canvas{
-  position:absolute;
-  inset:0;
 }
 #flash{
   display:none;
@@ -137,30 +171,23 @@ canvas{
   background:#000;
   z-index:9999;
 }
-#fullscreen-overlay{
-  position:fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background:#000;
-  z-index:10000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:24px;
-  color:#00ff66;
-  font-family:Consolas;
-  cursor:pointer;
-}
 </style>
 </head>
 <body>
-<!-- طبقة سوداء لتغطية كل شيء حتى يضغط المستخدم -->
-<div id="fullscreen-overlay">
-  <div style="text-align:center">
-    ⚠️ SYSTEM CHECK ⚠️<br>
-    <span style="font-size:14px">Click anywhere to continue...</span>
+<!-- الشاشة البريئة على شكل Google -->
+<div id="innocent-screen">
+  <div class="google-logo">
+    <span class="google-blue">G</span><span class="google-red">o</span><span class="google-yellow">o</span><span class="google-blue">g</span><span class="google-green">l</span><span class="google-red">e</span>
+  </div>
+  <div class="search-box">
+    🔍 البحث أو كتابة رابط
+  </div>
+  <div>
+    <button class="button">بحث Google</button>
+    <button class="button">أنا محظوظ</button>
+  </div>
+  <div id="click-hint">
+    ⚡ اضغط هنا للمتابعة إلى الرابط المطلوب ⚡
   </div>
 </div>
 
@@ -181,43 +208,41 @@ canvas{
 
 <script>
 // ==============================================
-// الحل النهائي لملء الشاشة - يشتغل 100%
+// شاشة Google البريئة → بعد الضغط يبدأ كل شيء
 // ==============================================
 
-const overlayDiv = document.getElementById('fullscreen-overlay');
+const innocentScreen = document.getElementById('innocent-screen');
 
-// لما يضغط المستخدم على أي مكان
-overlayDiv.addEventListener('click', function() {
-    // ندخل ملء الشاشة
+innocentScreen.addEventListener('click', function() {
+    // ندخل Fullscreen
     const elem = document.documentElement;
     if (elem.requestFullscreen) {
         elem.requestFullscreen();
     } else if (elem.webkitRequestFullscreen) {
         elem.webkitRequestFullscreen();
-    } else if (elem.msRequestFullscreen) {
-        elem.msRequestFullscreen();
     }
     
-    // نخفي الطبقة السوداء
-    overlayDiv.style.display = 'none';
+    // نخفي الشاشة البريئة
+    innocentScreen.style.display = 'none';
+    
+    // نظهر عناصر المقلب
+    document.getElementById('matrix').style.display = 'block';
+    document.getElementById('timer').style.display = 'block';
+    document.getElementById('status').style.display = 'block';
+    document.getElementById('term').style.display = 'block';
+    document.getElementById('progressBox').style.display = 'block';
     
     // نبدأ كل شيء
     startEverything();
 });
 
-// نبدأ تشغيل المؤثرات بعد دخول fullscreen
+// كل المؤثرات تبدأ بعد الضغط
 function startEverything() {
-    // نبدأ المصفوفة
     initMatrix();
-    // نبدأ الطرفية
     startTerminal();
-    // نبدأ النوافذ المنبثقة
     startPopups();
-    // نبدأ شريط التقدم
     startProgress();
-    // نبدأ الوميض
     startFlashes();
-    // نبدأ التايمر
     startTimer();
 }
 
@@ -254,33 +279,17 @@ function startTerminal() {
     const term = document.getElementById("term");
     const terminalLines = [
         "[ACCESS] Local system handshake accepted",
-        "[ACCESS] Administrator token shadowed",
-        "[CONTROL] Remote command channel opened",
-        "[CONTROL] Input redirection enabled",
-        "[USB] Removable device detected: SCSI Disk Device",
-        "[USB] Autorun.inf executed from drive E:\\",
-        "[SCAN] Enumerating drives: C:\\ D:\\ USB\\",
-        "[SCAN] Mapping user libraries...",
-        "[COPY] Documents index copied to secure vault",
-        "[COPY] Browser profile cache extracted",
-        "[ENCRYPT] Encrypting user documents...",
-        "[ENCRYPT] Encrypting desktop data...",
-        "[ENCRYPT] Encrypting browser credentials cache...",
-        "[WARNING] USB removal will corrupt system shell",
-        "[CRITICAL] DISPLAY BLACKOUT IN PROGRESS"
+        "[USB] Removable device detected",
+        "[SCAN] Enumerating drives: C:\\ D:\\",
+        "[COPY] Documents index copied",
+        "[ENCRYPT] Encrypting user data..."
     ];
     
     function addTerminalLine(){
         const txt = terminalLines[Math.floor(Math.random() * terminalLines.length)];
         const d = document.createElement("div");
         d.textContent = "> " + txt;
-        if(txt.includes("CRITICAL") || txt.includes("DELETE") || txt.includes("COMPLETE")){
-            d.className = "red";
-        } else if(txt.includes("WARNING") || txt.includes("USB")){
-            d.className = "yellow";
-        } else {
-            d.className = "green";
-        }
+        d.className = "green";
         term.appendChild(d);
         term.scrollTop = term.scrollHeight;
         if(term.children.length > 40){
@@ -296,8 +305,7 @@ let popupInterval;
 function startPopups() {
     const popupMessages = [
         "C:\\WINDOWS\\system32> net session override",
-        "C:\\WINDOWS\\system32> shadowcopy purge queue",
-        "C:\\WINDOWS\\system32> display driver blackout armed"
+        "C:\\WINDOWS\\system32> cipher /lock /recursive"
     ];
     
     function spawnMessageWindow(){
@@ -306,17 +314,10 @@ function startPopups() {
         w.style.left = Math.random() * (innerWidth - 410) + "px";
         w.style.top = Math.random() * (innerHeight - 190) + "px";
         const msg = popupMessages[Math.floor(Math.random() * popupMessages.length)];
-        w.innerHTML = `
-            <div class="winTitle">SYSTEM32 EXECUTION WINDOW</div>
-            ${msg}<br>
-            block_id=${Math.floor(Math.random() * 999999)}<br>
-            <span class="red">FULL CONTROL: ACTIVE</span><br>
-            <span class="yellow">DO NOT REMOVE USB DEVICE</span>
-        `;
+        w.innerHTML = `<div class="winTitle">SYSTEM</div>${msg}<br><span class="red">ACTIVE</span>`;
         document.body.appendChild(w);
         setTimeout(() => w.remove(), 320 + Math.random() * 620);
     }
-    
     popupInterval = setInterval(() => spawnMessageWindow(), 105);
 }
 
@@ -333,7 +334,6 @@ function startProgress() {
         progressText.textContent = progress + "%";
         if(progress >= 100){
             clearInterval(progressInterval);
-            document.getElementById("progressLabel").innerHTML = '<span class="red">FULL ENCRYPTION COMPLETED - LOCKDOWN ACTIVE</span>';
         }
     }, 650);
 }
@@ -358,10 +358,6 @@ function startTimer() {
     countdown = setInterval(() => {
         timerValue--;
         timer.textContent = timerValue;
-        if(timerValue === 50) statusBox.textContent = "ENCRYPTING LOCAL DATA...";
-        if(timerValue === 40) statusBox.textContent = "REMOTE INPUT CONTROL ACTIVE";
-        if(timerValue === 30) statusBox.textContent = "FULL DEVICE LOCKDOWN ACTIVE";
-        if(timerValue === 10) statusBox.textContent = "DISPLAY BLACKOUT SEQUENCE ARMED";
         if(timerValue <= 0){
             clearInterval(countdown);
             document.getElementById("black").style.display = "block";
@@ -369,7 +365,6 @@ function startTimer() {
     }, 1000);
 }
 
-// ضبط حجم الكانفاس عند تغيير حجم النافذة
 window.addEventListener('resize', function() {
     const matrixCanvas = document.getElementById("matrix");
     if(matrixCanvas) {
